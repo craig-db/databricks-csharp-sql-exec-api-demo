@@ -10,6 +10,9 @@ using Newtonsoft.Json.Linq;
 
 namespace RestDemo
 {
+    /**
+     * Databricks SQL Execution API POST parameters used for submitting a new query
+     */
     class SqlRequest
     {
         public string statement { get; set; }
@@ -19,17 +22,17 @@ namespace RestDemo
         public string wait_timeout = "0s";
     }
 
-    class Manifest
-    {
-        public int total_chunk_count { get; set; }
-    }
-
+    /**
+     * The return payload submitting a new query
+     */
     class SqlResponse
     {
         public string statement_id { get; set; }
-        public Manifest manifest { get; set; }
     }
 
+    /**
+     * Flight class used when converting the JSON result payload to an object
+     */
     class Flight
     {
         public Flight(JToken x)
@@ -62,28 +65,25 @@ namespace RestDemo
 
     class RestDemo
     {
-        static string host = "";
-        static string path = "";
-        static string token = "";
-        static string limit = "";
 
         static void Main(string[] args)
         {
-            host = args[0];
-            path = args[1];
-            token = args[2];
+            string host = args[0];
+            string path = args[1];
+            string token = args[2];
             int loops = int.Parse(args.Length < 4 ? "1" : args[3]);
-            limit = args.Length < 5 ? "1" : args[4];
+            string limit = args.Length < 5 ? "1" : args[4];
+
             List<Task> threads = new List<Task>();
             for (int i = 0; i < loops; i++)
             {
                 Console.WriteLine("starting thread");
-                threads.Add(RunAsync());
+                threads.Add(RunAsync(host, path, token, limit));
             }
             Parallel.ForEach(threads, t => t.GetAwaiter().GetResult());
         }
 
-        static async Task RunAsync()
+        static async Task RunAsync(string host, string path, string token, string limit)
         {
             HttpClient client = new HttpClient();
 
@@ -107,15 +107,15 @@ namespace RestDemo
 
             bool is_running = true;
 
+            string chunk_url = $"/api/2.0/sql/statements/{r.statement_id}";
             while (is_running)
             {
-                HttpResponseMessage response = await client.GetAsync($"/api/2.0/sql/statements/{r.statement_id}");
+                HttpResponseMessage response = await client.GetAsync(chunk_url);
                 response.EnsureSuccessStatusCode();
                 string response_str = await response.Content.ReadAsStringAsync();
-                JObject response_jo = JObject.Parse(response_str);
                 JObject jsonResponse = JsonConvert.DeserializeObject<JObject>(response_str);
-                string s_state = response_jo.SelectToken("$.status.state").Value<string>();
-
+                string s_state = (string)jsonResponse["status"]["state"];
+                Console.WriteLine($"Query state: {s_state}");
                 is_running = s_state == null || s_state.Equals("PENDING") || s_state.Equals("RUNNING");
                 is_running = is_running && !s_state.Equals("FAILED");
                 if (!is_running)
@@ -129,6 +129,14 @@ namespace RestDemo
                     }
                     Console.WriteLine($"{Thread.CurrentThread.ManagedThreadId} flights: \n\t{String.Join("\n\t", flights)}");
                     Console.WriteLine($"{Thread.CurrentThread.ManagedThreadId} Time Taken: {(t_end - t_start)}");
+
+                    // keep looping for next chunk
+                    if (jsonResponse["next_chunk_internal_link"] != null)
+                    {
+                        chunk_url = (string)jsonResponse["next_chunk_internal_link"];
+                        is_running = true;
+                        Console.WriteLine($"next_chunk_internal_link={chunk_url}");
+                    }
                 }
             }
 
