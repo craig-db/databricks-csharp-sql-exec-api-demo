@@ -2,7 +2,7 @@
 This repo contains a simple harness for running a variable number of threads against a Databricks SQL Warehouse. The SQL statement used is embedded in the source file `RestDemoCmd.cs`.
 
 ### Preparing the Delta table
-This test harness assumes you have a table called `field_demos.airlinedata.flights`. If you do not have such a Delta table, you can created it from the data that resides in `dbfs:/databricks-datasets/airlines`.
+This test harness assumes you have a table called `field_demos.airlinedata.flights`. If you do not have such a Delta table, you can create it from the data that resides in `dbfs:/databricks-datasets/airlines`.
 
 ```
 from pyspark.sql.functions import col, concat, lit, date_format
