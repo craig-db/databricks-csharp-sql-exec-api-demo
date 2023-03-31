@@ -1,10 +1,12 @@
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
 
 namespace RestDemo
 {
@@ -75,8 +77,8 @@ namespace RestDemo
             List<Task> threads = new List<Task>();
             for (int i = 0; i < loops; i++)
             {
-               Console.WriteLine("starting thread");
-               threads.Add(RunAsync());
+                Console.WriteLine("starting thread");
+                threads.Add(RunAsync());
             }
             Parallel.ForEach(threads, t => t.GetAwaiter().GetResult());
         }
@@ -125,11 +127,11 @@ namespace RestDemo
                         Flight f = new Flight(el);
                         flights.Add(f);
                     }
-                    Console.WriteLine($"flights: {String.Join("\n", flights)}");
-                    Console.WriteLine($"Time Taken: {(t_end - t_start)}");
+                    Console.WriteLine($"{Thread.CurrentThread.ManagedThreadId} flights: \n\t{String.Join("\n\t", flights)}");
+                    Console.WriteLine($"{Thread.CurrentThread.ManagedThreadId} Time Taken: {(t_end - t_start)}");
                 }
             }
- 
+
         }
 
         static async Task<SqlResponse> GetSqlResponse(HttpClient client, SqlRequest statement)
