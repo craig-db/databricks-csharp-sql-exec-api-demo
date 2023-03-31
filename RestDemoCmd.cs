@@ -69,8 +69,8 @@ namespace RestDemo
         static void Main(string[] args)
         {
             string host = args[0];
-            string path = args[1];
-            string token = args[2];
+            string workspace_id = args[1];
+            string pat_token = args[2];
             int loops = int.Parse(args.Length < 4 ? "1" : args[3]);
             string limit = args.Length < 5 ? "1" : args[4];
 
@@ -78,12 +78,12 @@ namespace RestDemo
             for (int i = 0; i < loops; i++)
             {
                 Console.WriteLine("starting thread");
-                threads.Add(RunAsync(host, path, token, limit));
+                threads.Add(RunAsync(host, workspace_id, pat_token, limit));
             }
             Parallel.ForEach(threads, t => t.GetAwaiter().GetResult());
         }
 
-        static async Task RunAsync(string host, string path, string token, string limit)
+        static async Task RunAsync(string host, string workspace_id, string pat_token, string limit)
         {
             HttpClient client = new HttpClient();
 
@@ -91,14 +91,14 @@ namespace RestDemo
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json"));
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", pat_token);
 
             string sql = $"select Year, Month, DayofMonth, DepTime, ArrTime, FlightNum, AirTime, ArrDelay, DepDelay from field_demos.airlinedata.flights limit {limit}";
 
             // Submit query to warehouse (note: results are retrieved using another endpoint)
             SqlRequest s = new SqlRequest();
             s.statement = sql;
-            s.warehouse_id = path;
+            s.warehouse_id = workspace_id;
             s.catalog = "field_demos";
             s.schema = "airlinedata";
             DateTime t_start = DateTime.Now;
