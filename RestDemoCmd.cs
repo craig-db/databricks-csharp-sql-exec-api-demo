@@ -118,6 +118,7 @@ namespace RestDemo
                 is_running = is_running && !s_state.Equals("FAILED");
                 if (!is_running)
                 {
+                    DateTime t_end = DateTime.Now;
                     List<Flight> flights = new List<Flight>();
                     foreach (var el in jsonResponse["result"]["data_array"])
                     {
@@ -125,11 +126,10 @@ namespace RestDemo
                         flights.Add(f);
                     }
                     Console.WriteLine($"flights: {String.Join("\n", flights)}");
+                    Console.WriteLine($"Time Taken: {(t_end - t_start)}");
                 }
             }
-            DateTime t_end = DateTime.Now;
-            Console.WriteLine($"Time Taken: {(t_end - t_start)}");
-
+ 
         }
 
         static async Task<SqlResponse> GetSqlResponse(HttpClient client, SqlRequest statement)
